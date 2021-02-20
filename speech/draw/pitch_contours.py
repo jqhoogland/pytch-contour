@@ -17,13 +17,39 @@ class F0Drawer(object):
     def __init__(self, f0_analyzer):
         self.f0_analyzer = f0_analyzer
 
+    @staticmethod
+    def align_paths(path_1, path_2):
+        """ Find the first instance of an entry greater than zero in both paths,
+        and returns new versions of the paths aligned at this point. Also trims
+        any trailing 0s at the end of the paths.
+
+        At this point, it adds in 0s at the end to whichever path is shorter so
+        that both are of equal length in the end.
+        """
+        first_idx_past_zero = lambda x: np.argmax(x > 0)
+        last_idx_past_zero = lambda x: x.shape[0] - first_idx_past_zero(np.flip(x))
+
+        path_1 = path_1[first_idx_past_zero(path_1):last_idx_past_zero(path_1)]
+        path_2 = path_2[first_idx_past_zero(path_2):last_idx_past_zero(path_2)]
+
+        # TODO: Perhaps there is a nicer, more compact way to do the next lines
+        [shorter, longer] = np.sort([path_1.shape[0], path_2.shape[0]])
+        zeros_to_append = np.zeros(longer - shorter)
+
+        if path_1.shape[0] > path_2.shape[0]:
+            path_2 = np.concatenate([path_2, zeros_to_append])
+        elif path_2.shape[0] > path_1.shape[0]:
+            path_1 = np.concatenate([path_1, zeros_to_append])
+
+        return path_1, path_2
+
     def draw_f0_contour(self,
                         speech_file,
                         **kwargs):
 
         path = self.f0_analyzer.get_f0_contour(speech_file, **kwargs)
 
-        return plt.plot(path)
+        return plt.plot(path), path
 
     def animate_contour_analysis(self,
                                  speech_file,
@@ -59,7 +85,6 @@ class F0Drawer(object):
         plt.subplot(4, 3, (10, 12)).plot(speech_file.signal)
         plt.show()
 
-
         def render(frame_idx):
             frames_plot.set_ydata(frames[frame_idx, :])
             autocorrelation_plot.set_ydata(frames_autocorrelation[frame_idx, :window_length // 2])
@@ -87,34 +112,7 @@ class F0Drawer(object):
 
         sd.wait()
         print("Recording done.")
-        self.draw_f0_contour(speech_file,
-                             **kwargs)
-
-    @staticmethod
-    def align_paths(path_1, path_2):
-        """ Find the first instance of an entry greater than zero in both paths,
-        and returns new versions of the paths aligned at this point. Also trims
-        any trailing 0s at the end of the paths.
-
-        At this point, it adds in 0s at the end to whichever path is shorter so
-        that both are of equal length in the end.
-        """
-        first_idx_past_zero = lambda x: np.argmax(x > 0)
-        last_idx_past_zero = lambda x: x.shape[0] - first_idx_past_zero(np.flip(x))
-
-        path_1 = path_1[first_idx_past_zero(path_1):last_idx_past_zero(path_1)]
-        path_2 = path_2[first_idx_past_zero(path_2):last_idx_past_zero(path_2)]
-
-        # TODO: Perhaps there is a nicer, more compact way to do the next lines
-        [shorter, longer] = np.sort([path_1.shape[0], path_2.shape[0]])
-        zeros_to_append = np.zeros(longer - shorter)
-
-        if path_1.shape[0] > path_2.shape[0]:
-            path_2 = np.concatenate([path_2, zeros_to_append])
-        elif path_2.shape[0] > path_1.shape[0]:
-            path_1 = np.concatenate([path_1, zeros_to_append])
-
-        return path_1, path_2
+        return self.draw_f0_contour(speech_file, **kwargs)
 
     def record_and_compare(self,
                            src_speech_file,
@@ -127,10 +125,12 @@ class F0Drawer(object):
         src_path = self.f0_analyzer.get_f0_contour(src_speech_file, **kwargs)
 
         print("\n")
-        n_samples = src_speech_file.signal.shape[0] * target_sampling_rate // src_speech_file.sampling_rate
 
+        src_speech_file.trim(src_path)
         src_speech_file.play()
         sd.wait()
+
+        n_samples = src_speech_file.signal.shape[0] * target_sampling_rate // src_speech_file.sampling_rate
 
         print("Starting recording...")
 
@@ -146,9 +146,10 @@ class F0Drawer(object):
         print("Recording done.")
 
         target_path = self.f0_analyzer.get_f0_contour(target_speech_file, **kwargs)
-
         src_path, target_path = self.align_paths(src_path, target_path)
 
-        #ax1.title = src_speech_file.name
+        ax1.set_title(src_speech_file.name)
         ax1.plot(src_path)
         ax2.plot(target_path)
+
+        return src_path, target_path

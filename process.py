@@ -1,4 +1,4 @@
-import argparse, time
+import argparse, time, json
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -25,6 +25,12 @@ parser.add_argument('-V', '--voicing_threshold', type=float, default=0.45,
 parser.add_argument('-S', '--silence_threshold', type=float, default=0.03,
                     help='')
 
+parser.add_argument('-J', '--octave_jump_cost', type=float, default=0.35,
+                    help='')
+
+parser.add_argument('-T', '--voicing_transition_cost', type=float, default=0.14,
+                    help='')
+
 parser.add_argument('-c','--pitch_contour', type=str, default="boersma",
                     help='The kind of pitch_contour to apply. Options are currently restricted to `boersma``')
 
@@ -34,7 +40,8 @@ parser.add_argument('-r','--record', type=str, default="False",
 parser.add_argument('-v','--verbose', type=str, default="False",
                     help='Whether to record verbose output. Results in displaying more plots.')
 
-
+parser.add_argument('-s','--save', type=str, default="",
+                    help='Path to save pitch contour to JSON. Default="" (does not save). ')
 
 args = parser.parse_args()
 
@@ -45,24 +52,36 @@ if __name__ == "__main__":
     settings = {"max_candidates_per_frame":15,
                 "min_pitch":args.pitch_range[0],
                 "max_pitch":args.pitch_range[1],
-                "voicing_threshold":0.45,
-                "silence_threshold":0.03,
+                "voicing_threshold":args.voicing_threshold,
+                "silence_threshold":args.silence_threshold,
                 "octave_cost":args.octave_cost,
-                "voicing_transition_cost":0.14,
-                "octave_jump_cost":0.35}
+                "voicing_transition_cost":args.voicing_transition_cost,
+                "octave_jump_cost":args.octave_jump_cost}
 
     # plt.plot(praat.signal[0:500])
     # praat.listen()
     # praat.draw_spectrograms(args.frame_duration, args.frame_stride, args.n_fft_points, args.n_filters)
+
+    res = {}
+    src_path, target_path = np.array([]), np.array([])
     if args.file_path != "":
         speech_file = SpeechFile(args.file_path)
 
         if args.record == "True":
-            res = praat.record_and_compare(speech_file, **settings)
+            src_path, target_path = praat.record_and_compare(speech_file, **settings)
         else:
-            res = praat.draw_f0_contour(speech_file, **settings)
+            _, src_path = praat.draw_f0_contour(speech_file, **settings)
 
     else:
-        res = praat.record_and_draw(**settings)
+        _, target_path  = praat.record_and_draw(**settings)
+
+    res["src_path"], res["target_path"] = src_path.tolist(), target_path.tolist()
+
+    if args.save:
+        print("Saving...")
+        with open(args.save, "w+") as f:
+            json.dump(res, f)
+
+        print("Completed")
 
     plt.show()

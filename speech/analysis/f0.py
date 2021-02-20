@@ -1,5 +1,5 @@
 """
-Boersma 1993 (Praat F0 Estimator)
+Based on Boersma 1993 (Praat F0 Estimator)
 
 """
 from scipy import optimize
@@ -10,6 +10,7 @@ from matplotlib import animation
 from speech.analysis.window import *
 from speech.speech_file import *
 
+np.set_printoptions(threshold=1000)
 # TODO Configure correct constant scaling factor
 lag_freq_switch= lambda lag_or_freq, sampling_rate: sampling_rate / lag_or_freq
 lag_freq_switch_int = lambda lag_or_freq, sampling_rate: sampling_rate // lag_or_freq
@@ -46,6 +47,7 @@ def parabolic_interpolation(correlation, lag_idx, min_pitch, sampling_rate, octa
 
     if (max_strength > 1):
         max_strength = 1 / max_strength
+
 
     return max_freq, max_strength
 
@@ -109,12 +111,11 @@ class F0Analyzer(WindowAnalyzer):
         # Step 3.7. Perform a Fast Fourier Transform (discrete version of equation 15)
         # TODO: check whether step 3.6 is really necessary (np's fft can automatically append zeros)
         freq_spectrum = np.fft.fft(frames, axis=-1)
-        #print(*["\n{} {}".format(1 / abs(a), abs(b) > 1) for a, b in zip(np.fft.fftfreq(frames.shape[-1]), freq_spectrum)])
         # Step 3.8. Square the samples in the frequency domain
         power_spectrum = np.square(np.absolute(freq_spectrum))
         # Step 3.9. Perform an inverse Fast Fourier Transform (discrete version of equation 16). This
         # gives a sampled version of ra(τ).
-        lag_spectrum = np.fft.ifft(power_spectrum, axis= -1)
+        lag_spectrum = np.abs(np.fft.ifft(power_spectrum, axis= -1))
 
         return (lag_spectrum / np.max(lag_spectrum, axis= -1, keepdims=True))
 
@@ -133,7 +134,8 @@ class F0Analyzer(WindowAnalyzer):
             elif f_before == 0 or f_after == 0: # Effectively an XOR
                 return voicing_transition_cost
             else:
-                return octave_jump_cost ** 2* np.absolute(np.log (f_before / f_after))
+                #return octave_jump_cost ** 2 * np.absolute(np.log (f_before / f_after))
+                return octave_jump_cost * np.absolute(np.log2 (f_before / f_after))
 
         path = np.zeros(n_frames)
         possibility_costs = np.zeros(max_candidates_per_frame)
@@ -201,6 +203,7 @@ class F0Analyzer(WindowAnalyzer):
         window_autocorrelation = self.get_autocorrelation(self.get_window(window_length))[:window_length]
         frames_autocorrelation = (windowed_frames_autocorrelation / window_autocorrelation)
 
+
         # Step 3.11. Find the places and heights of the maxima of the continuous version of
         # rx(τ), which is given by equation 22, e.g., with the algorithm brent from Press et al.
         # (1989). The only places considered for the maxima are those that yield a pitch
@@ -215,14 +218,18 @@ class F0Analyzer(WindowAnalyzer):
         max_lag_idx = max_pitch #lag_freq_switch_int(min_pitch, speech_file.sampling_rate)
 
         for frame_idx in range(n_frames):
+            # frame_maxima is a list of length-two arrays (maximum_frequency, corresponding_strength)
             frame_maxima = []
             for lag_idx in range(min_lag_idx, min(max_lag_idx - 1, window_length - 1)):
                 frame = frames_autocorrelation[frame_idx]
-                if ((frame[lag_idx] >= frame[lag_idx - 1] and frame[lag_idx] >= frame[lag_idx + 1])# local max
-                    and frame[lag_idx] > 0.5 * voicing_threshold): # exceeds voicing_threshold
 
+                is_local_max = (frame[lag_idx] >= frame[lag_idx - 1] and frame[lag_idx] >= frame[lag_idx + 1])
+                exceeds_voicing_threshold = frame[lag_idx] > 0.5 * voicing_threshold
+
+                if (is_local_max and exceeds_voicing_threshold):
                     frame_maxima.append(parabolic_interpolation(frame, lag_idx, min_pitch, speech_file.sampling_rate, octave_cost))
 
+            # Reshape into the correct format, sort according to cost
             frame_maxima = np.asarray(frame_maxima).reshape((-1, 2))
             frame_maxima = (frame_maxima[-frame_maxima[:, 1].argsort()])
             frame_maxima = frame_maxima[:max_candidates_per_frame - 1]
@@ -237,6 +244,7 @@ class F0Analyzer(WindowAnalyzer):
         unvoiced_pairs = np.concatenate((np.zeros((n_frames, 1)), unvoiced_strengths), axis=1)
         unvoiced_pairs = unvoiced_pairs.reshape((n_frames, 1, 2))
         maxima = np.concatenate((unvoiced_pairs, maxima), axis= 1)
+
 
         # After performing step 2 for every frame, we are left with a number of frequencystrength pairs (Fni, Rni), where the index n runs from 1 to the number of frames, and i
         # is between 1 and the number of candidates in each frame. The locally best candidate
@@ -261,141 +269,3 @@ class F0Analyzer(WindowAnalyzer):
             res = path
 
         return res
-
-    def animate_contour_analysis(self,
-                                 speech_file,
-                                 frames,
-                                 windowed_frames,
-                                 windowed_frames_autocorrelation,
-                                 frames_autocorrelation,
-                                 window_autocorrelation,
-                                 min_pitch,
-                                 max_pitch,
-                                 path):
-
-        n_frames, window_length = frames.shape
-
-        fig, axes = plt.subplots(4, 3)
-        frames_plot, = axes[0, 0].plot(frames[0, :])
-        axes[0, 1].plot(self.get_window(window_length))
-        windowed_frames_plot, = axes[0, 2].plot(windowed_frames[0, :])
-
-        windowed_autocorrelation_plot, = axes[1, 0].plot(windowed_frames_autocorrelation[0, :])
-        axes[1, 1].plot(window_autocorrelation)
-        autocorrelation_plot, = axes[1, 2].plot(frames_autocorrelation[0, :window_length // 2])
-        path_ax = plt.subplot(4,3,(7, 9))
-        path_ax.set_xlim(0, len(path))
-        path_ax.set_ylim(min_pitch, max_pitch)
-        path_plot, = path_ax.plot(path[:0])
-
-        plt.subplot(4, 3, (10, 12)).plot(speech_file.signal)
-        plt.show()
-
-
-        def render(frame_idx):
-            frames_plot.set_ydata(frames[frame_idx, :])
-            autocorrelation_plot.set_ydata(frames_autocorrelation[frame_idx, :window_length // 2])
-            windowed_frames_plot.set_ydata(windowed_frames[frame_idx, :])
-            windowed_autocorrelation_plot.set_ydata(windowed_frames_autocorrelation[frame_idx, :])
-            path_ax.plot(path[:frame_idx])
-            return frames_plot, autocorrelation_plot, windowed_frames_plot, windowed_autocorrelation_plot
-
-        anim = animation.FuncAnimation(fig, render, frames=n_frames, interval=10)
-
-    def record_and_draw(self,
-                        duration=2,
-                        sampling_rate=24000,
-                        max_candidates_per_frame=4,
-                        min_pitch=100,
-                        max_pitch=900,
-                        voicing_threshold=0.4,
-                        silence_threshold=0.05,
-                        octave_cost=0.2,
-                        voicing_transition_cost=0.2,
-                        octave_jump_cost=0.2,
-                        file_path="",
-                        is_verbose=False):
-
-        n_samples = sampling_rate * duration
-
-        print("Starting recording...")
-        signal = sd.rec(n_samples, samplerate=sampling_rate, channels=1)
-        speech_file = SpeechFile(file_path=file_path, sound_file=(signal, sampling_rate), overwrite=True)
-
-        if file_path != "":
-            speech_file.save()
-
-        sd.wait()
-        print("Recording done.")
-        self.draw_f0_contour(speech_file,
-                             max_candidates_per_frame,
-                             min_pitch,
-                             max_pitch,
-                             voicing_threshold,
-                             silence_threshold,
-                             octave_cost,
-                             voicing_transition_cost,
-                             octave_jump_cost)
-
-    def record_and_compare(self,
-                           src_speech_file,
-                           target_sampling_rate=24000,
-                           max_candidates_per_frame=4,
-                           min_pitch=100,
-                           max_pitch=900,
-                           voicing_threshold=0.4,
-                           silence_threshold=0.05,
-                           octave_cost=0.2,
-                           voicing_transition_cost=0.2,
-                           octave_jump_cost=0.2,
-                           file_path = "",
-                           is_verbose=False):
-
-        fig, (ax1, ax2) = plt.subplots(2, 1)
-
-        src_path, = self.draw_f0_contour(src_speech_file,
-                                         max_candidates_per_frame,
-                                         min_pitch,
-                                         max_pitch,
-                                         voicing_threshold,
-                                         silence_threshold,
-                                         octave_cost,
-                                         voicing_transition_cost,
-                                         octave_jump_cost,
-                                         is_plotted=False)
-
-        print("\n")
-        n_samples = src_speech_file.signal.shape[0] * target_sampling_rate // src_speech_file.sampling_rate
-
-        src_speech_file.play()
-        sd.wait()
-
-        print("Starting recording...")
-
-        target_signal = sd.rec(n_samples, samplerate=target_sampling_rate, channels=1)
-
-        target_speech_file = SpeechFile(file_path=file_path, sound_file=(target_signal, target_sampling_rate), overwrite=True)
-
-        if file_path != "":
-            target_speech_file.save()
-
-        sd.wait()
-
-        print("Recording done.")
-
-        target_path, = self.draw_f0_contour(target_speech_file,
-                                            max_candidates_per_frame,
-                                            min_pitch,
-                                            max_pitch,
-                                            voicing_threshold,
-                                            silence_threshold,
-                                            octave_cost,
-                                            voicing_transition_cost,
-                                            octave_jump_cost,
-                                            is_plotted=False)
-
-        src_path, target_path = self.align_paths(src_path, target_path)
-
-        #ax1.title = src_speech_file.name
-        ax1.plot(src_path)
-        ax2.plot(target_path)

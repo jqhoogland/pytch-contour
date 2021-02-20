@@ -1,10 +1,10 @@
-"""OA
+"""
 Inspiration from: https://haythamfayek.com/2016/04/21/speech-processing-for-machine-learning.html (MIT License)
 ON mel-filter formula: http://practicalcryptography.com/miscellaneous/machine-learning/guide-mel-frequency-cepstral-coefficients-mfccs/ (via above)
 
 Estimating f0 contour: ROBUST F0 ESTIMATION IN NOISY SPEECH SPEECH_FILE.SIGNALS USING SHIFT AUTOCORRELATION
     (Frank Kurth, Alessia Cornaggia-Urrigshardt and Sebastian Urrigshardt)
-
+n
 
 Author: Jesse Hoogland
 License: MIT
@@ -73,9 +73,8 @@ class WindowAnalyzer(object):
             window = np.hanning(window_length)
         elif self.window_name == "gaussian":
             # (exp(−12(t/T − 1/2)^2 ) − e^(−12))/(1− e^(−12) )
-            ts = np.linspace(0, window_length - 1, window_length)
+            ts = np.arange(window_length)
             window = (np.exp(-12 * np.square(ts / window_length - 0.5)) - np.exp(-12)) / (1 - np.exp(-12))
-            print(window.shape, window_length)
         else:
             raise ValueError("Window {} is inappropriate choice. Must be one of [\"hanning\", \"hamming]".format(window))
 
