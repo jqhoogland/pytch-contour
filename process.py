@@ -14,46 +14,45 @@ parser.add_argument('-p', '--file-path', type=str, default="",
                     help='The location of the .wav audiofile to play.')
 
 parser.add_argument('-P', '--pitch-range', type=int, nargs=2, default=[75, 500],
-                    help='')
+                    help='Default: [75, 500]')
 
 parser.add_argument('-O', '--octave-cost', type=float, default=0.01,
-                    help='')
+                    help='Default: 0.01')
 
 parser.add_argument('-V', '--voicing-threshold', type=float, default=0.45,
-                    help='')
+                    help='Default: 0.45')
 
 parser.add_argument('-S', '--silence-threshold', type=float, default=0.03,
-                    help='')
+                    help='Default: 0.03')
 
 parser.add_argument('-J', '--octave-jump-cost', type=float, default=0.35,
-                    help='')
+                    help='Default: 0.35')
 
 parser.add_argument('-T', '--voicing-transition-cost', type=float, default=0.14,
-                    help='')
+                    help='Default: 0.14')
 
 parser.add_argument('-c','--pitch-contour', type=str, default="boersma",
-                    help='The kind of pitch_contour to apply. Options are currently restricted to `boersma``')
+                    help='The kind of pitch_contour to apply. Options are currently restricted to `boersma` (also the default)')
 
 parser.add_argument('-a', '--audio', dest="audio", action="store_true",
                     help="Play the clip being analyzed. This is overriden by `-r`.")
-parser.add_argument('--no_audio', dest="audio", action="store_false", help="Do not play the audio clip behind analyzed. Default.")
+parser.add_argument('--no_audio', dest="audio", action="store_false", help="Do not play the audio clip behind analyzed. This is the default option.")
 parser.set_defaults(audio=False)
 
 parser.add_argument('-r','--record', dest="record", action="store_true",
                     help='Prompt the user to record their own voice. Overrides `-a`.')
 parser.add_argument('--no-record', dest="record", action="store_false",
-                    help='Prompt the user to not record their own voice. Default.')
+                    help='Prompt the user to not record their own voice. This is the default option.')
 parser.set_defaults(record=False)
 
 parser.add_argument('-v','--verbose', dest="verbose", action="store_true",
                     help='Whether to record verbose output. Results in displaying more plots.')
 parser.add_argument('--no-verbose', dest="verbose", action="store_false",
-                    help='Hides additional plots. Default')
+                    help='Hides additional plots. This is the default option.')
 parser.set_defaults(verbose=False)
 
-
 parser.add_argument('-s','--save', type=str, default="",
-                    help='Path to save pitch contour to JSON. Default="" (does not save). ')
+                    help='Path to save pitch contour to (JSON). The default is to not save. ')
 
 args = parser.parse_args()
 
