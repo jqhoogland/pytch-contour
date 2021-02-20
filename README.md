@@ -6,13 +6,29 @@ This is based off of a [paper by Paul Boersma (1993)](https://citeseerx.ist.psu.
 ### Usage
 
 To record and analyze a sample of your own voice:
-`pipenv run python process.py`
 
-To process a prerecorded sample into a contour and play the audio:
-`pipenv run python process.py -p audio/mandarin/zhong4yao4.wav -a`
+```pipenv run python process.py```
 
-To play a prerecorded sample, then analyze the sample & your own imitation so you can compare:
-`pipenv run python process.py -p audio/mandarin/zhong4yao4.wav -r`
+##### Me saying "Hello world" 
+![hello-world.png](/docs/hello-world.png)
+
+To analyze prerecorded sample into a contour:
+
+```pipenv run python process.py -p audio/mandarin/zhong4yao4.wav```
+
+##### "Zhòng yào" (I don't speak any Mandarin and have no idea what this means)
+![zhong4yao4.png](/docs/zhong4yao4.png)
+
+
+To also play the corresponding audio, use the `-a, --audio` flag.
+
+To play a prerecorded sample, then record your imitation, then compare the two:
+
+##### "Zhòng yào" (Guess who's who)
+```pipenv run python process.py -p audio/mandarin/zhong4yao4.wav -r```
+
+![zhong4yao4-comparison.png](/docs/zhong4yao4-comparison.png)
+
 
 ### Options
 By default, the options are the same as in Boersma's original paper. 
