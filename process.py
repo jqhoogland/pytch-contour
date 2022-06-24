@@ -209,11 +209,19 @@ if __name__ == "__main__":
         audio=args.audio,
     )
 
+    i = 0
+
     while True:
         run_analysis(options)
 
         plx.from_matplotlib(plt.gcf())
         plx.show()
 
-        if input("Press SPACE to continue. Press ENTER to exit.") != " ":
+        action = input("Type Q to exit. Type R to reset").lower()
+
+        if action == "q":
             break
+        elif action == "r":
+            plt.gcf().clear(True)
+
+        i += 1

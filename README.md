@@ -58,6 +58,8 @@ By default, the options are the same as in Boersma's original paper.
                         Default: 0.14
 ```
 
-You might have to play around with these settings to get something that works for you. I like `silence_threshold=0.15` (I don't record my audio in a studio) and `octave_jump_cost=0.4`
+You might have to play around with these settings to get something that works for you. I like `silence_threshold=0.15` (I don't record my audio in a studio) and `octave_jump_cost=0.4`.
+
+You'll definitely want to adjust the pitch range, and you can use an online pitch measurement to find out your range.
 
  

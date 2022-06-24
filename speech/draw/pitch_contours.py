@@ -12,7 +12,7 @@ from speech.speech_file import *
 
 
 class F0Drawer:
-    def __init__(self, f0_analyzer):
+    def __init__(self, f0_analyzer: F0Analyzer):
         self.f0_analyzer = f0_analyzer
 
     @staticmethod
@@ -43,7 +43,13 @@ class F0Drawer:
 
     def draw_f0_contour(self, speech_file, **kwargs):
         path = self.f0_analyzer.get_f0_contour(speech_file, **kwargs)
-        return plt.plot(path), path
+        first_idx_past_zero = np.argmax(path >= kwargs["min_pitch"])
+        last_idx_past_zero = len(path) - np.argmax(path[::-1] >= kwargs["min_pitch"])
+
+        trimmed_path = path[first_idx_past_zero:last_idx_past_zero]
+        trimmed_path = path
+        trimmed_path[trimmed_path == 0] = np.nan
+        return plt.plot(trimmed_path), trimmed_path
 
     def animate_contour_analysis(self, speech_file, **kwargs):
 

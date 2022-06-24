@@ -1,3 +1,4 @@
 max_pitch: 200
-min_pitch: 50
-silence_threshold: 0.20
+min_pitch: 100
+silence_threshold: 0.10
+octave_jump_cost: 0.5
