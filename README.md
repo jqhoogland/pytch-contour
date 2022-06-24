@@ -1,13 +1,21 @@
 # pytch-contour
-Estimate pitch contours from spoken clips with python. For practice with tonal languages like Mandarin.
+Estimate pitch contours from spoken clips with Python. For practice with tonal languages like Mandarin.
 
-This is based off of a [paper by Paul Boersma (1993)](https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.218.4956&rep=rep1&type=pdf). The methodology is the same as is in his software, [Praat](https://github.com/praat/praat), but implemented on python. Rather than focus on linguistic value, I'd like this to be pedagogical: for practicing intonation.
+This is based off of a [paper by Paul Boersma (1993)](https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.218.4956&rep=rep1&type=pdf). The methodology is the same as is in his software, [Praat](https://github.com/praat/praat), but implemented on Python. Rather than focus on linguistics, my aim is pedagogical — to help me learn Mandarin.
+
+### Installation
+
+Make sure you have portaudio installed. (On OS: `brew install portaudio`.)
+
+This projects uses pipenv as its dependency manager. Just run `pipenv shell` to set up a virtual environment,
+then run `pipenv install` to install the dependencies, and then you can use `python process.py` to start recording contours.
 
 ### Usage
 
-To record and analyze a sample of your own voice:
+To get a list of options:
+```pipenv run python process.py --help```
 
-```pipenv run python process.py```
+To record your own voice, provide the `-r` (`--record`) flag. 
 
 ##### Me saying "Hello world" 
 ![hello-world.png](/docs/hello-world.png)
