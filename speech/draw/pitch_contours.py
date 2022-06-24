@@ -11,9 +11,7 @@ from speech.analysis.f0 import *
 from speech.speech_file import *
 
 
-class F0Drawer(object):
-    # Separated concerns in the event that I implement multiple f0_analyzers
-    # (not just Boersma 1993)
+class F0Drawer:
     def __init__(self, f0_analyzer):
         self.f0_analyzer = f0_analyzer
 
@@ -44,9 +42,7 @@ class F0Drawer(object):
         return path_1, path_2
 
     def draw_f0_contour(self, speech_file, **kwargs):
-
         path = self.f0_analyzer.get_f0_contour(speech_file, **kwargs)
-
         return plt.plot(path), path
 
     def animate_contour_analysis(self, speech_file, **kwargs):
@@ -105,7 +101,6 @@ class F0Drawer(object):
         anim = animation.FuncAnimation(fig, render, frames=n_frames, interval=10)
 
     def record_and_draw(self, duration=2, sampling_rate=24000, file_path="", **kwargs):
-
         n_samples = int(sampling_rate * duration)
 
         print("Starting recording...")

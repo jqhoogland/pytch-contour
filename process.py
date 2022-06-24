@@ -5,6 +5,7 @@ from dataclasses import dataclass
 
 import numpy as np
 import matplotlib.pyplot as plt
+import plotext as plx
 import yaml
 
 from speech.analysis.f0 import *
@@ -142,7 +143,7 @@ class PytchContoursOptions:
     save: str | None
 
 
-def main(options: PytchContoursOptions):
+def run_analysis(options: PytchContoursOptions):
     f0 = F0Drawer(F0Analyzer())
 
     res = {}
@@ -171,9 +172,7 @@ def main(options: PytchContoursOptions):
         with open(options.save, "w+") as f:
             json.dump(res, f)
 
-        print("Completed")
-
-    plt.show()
+        print("Saved")
 
 
 if __name__ == "__main__":
@@ -210,4 +209,11 @@ if __name__ == "__main__":
         audio=args.audio,
     )
 
-    main(options)
+    while True:
+        run_analysis(options)
+
+        plx.from_matplotlib(plt.gcf())
+        plx.show()
+
+        if input("Press SPACE to continue. Press ENTER to exit.") != " ":
+            break
