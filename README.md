@@ -17,6 +17,8 @@ To get a list of options:
 
 To record your own voice, provide the `-r` (`--record`) flag. 
 
+You can also save your config in a `yaml` file and load it with the `-C` (`--config`) flag. (See the example `config.yaml`.)
+
 ##### Me saying "Hello world" 
 ![hello-world.png](/docs/hello-world.png)
 
